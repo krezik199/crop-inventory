@@ -756,8 +756,8 @@ function CropDetailView({ crop, data, loading }: { crop: CropConfig; data: CropI
           ))}
         </div>
         {activeLocation === null
-          ? <QuonsetOverviewPanel locations={POTATO_LOCATIONS} accentColor="orange" unit="CWT" cropLabel="Potato" onSelectLocation={setActiveLocation} />
-          : <QuonsetLocationPanel location={POTATO_LOCATIONS.find((l) => l.location === activeLocation)!} accentColor="orange" unit="CWT" />
+          ? <QuonsetOverviewPanel locations={POTATO_LOCATIONS} accentColor="orange" unit="Tons" cropLabel="Potato" onSelectLocation={setActiveLocation} />
+          : <QuonsetLocationPanel location={POTATO_LOCATIONS.find((l) => l.location === activeLocation)!} accentColor="orange" unit="Tons" />
         }
       </div>
     );
@@ -780,8 +780,8 @@ function CropDetailView({ crop, data, loading }: { crop: CropConfig; data: CropI
           ))}
         </div>
         {activeLocation === null
-          ? <QuonsetOverviewPanel locations={ONION_LOCATIONS} accentColor="yellow" unit="CWT" cropLabel="Onion" onSelectLocation={setActiveLocation} />
-          : <QuonsetLocationPanel location={ONION_LOCATIONS.find((l) => l.location === activeLocation)!} accentColor="yellow" unit="CWT" />
+          ? <QuonsetOverviewPanel locations={ONION_LOCATIONS} accentColor="yellow" unit="Tons" cropLabel="Onion" onSelectLocation={setActiveLocation} />
+          : <QuonsetLocationPanel location={ONION_LOCATIONS.find((l) => l.location === activeLocation)!} accentColor="yellow" unit="Tons" />
         }
       </div>
     );
