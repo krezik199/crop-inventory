@@ -105,8 +105,7 @@ const CROPS: CropConfig[] = [
     hasSubLocations: true,
     accentColor: 'orange',
     bgColor: 'from-orange-950/60 to-orange-900/20',
-    description: 'Multiple storage locations',
-    icon: (size = 24, className = '') => <PotatoIcon size={size} className={className} />,
+    description: 'Wheeler · Hiawatha · Road 19 · Martinez',
   },
   {
     id: 'onions',
@@ -116,8 +115,7 @@ const CROPS: CropConfig[] = [
     hasSubLocations: true,
     accentColor: 'yellow',
     bgColor: 'from-yellow-950/60 to-yellow-900/20',
-    description: 'Multiple storage locations',
-    icon: (size = 24, className = '') => <OnionIcon size={size} className={className} />,
+    description: 'Wagner North · Wagner South',
   },
   {
     id: 'yellow-peas',
@@ -130,6 +128,166 @@ const CROPS: CropConfig[] = [
     description: 'Pea inventory tracking',
     icon: (size = 24, className = '') => <PeaPodIcon size={size} className={className} />,
   },
+];
+
+// ─── Quonset Building SVG ──────────────────────────────────────────────────────
+
+function QuonsetBuilding({
+  name,
+  capacity,
+  current,
+  accentColor = '#f97316',
+}: {
+  name: string;
+  capacity: number;
+  current: number;
+  accentColor?: string;
+}) {
+  const fillPct = Math.min(1, Math.max(0, current / capacity));
+  const isEmpty = current === 0;
+
+  const W = 100;
+  const wallH = 14;       // short vertical side walls
+  const archH = 38;       // height of the half-cylinder arch above walls
+  const totalH = wallH + archH + 18; // +18 for label space
+  const floor = wallH + archH;
+  const cx = W / 2;
+
+  // The arch is a half-ellipse
+  const archTop = archH;
+
+  // Fill: fills from floor up, clipped inside the arch shape
+  const fillH = (wallH + archH) * fillPct;
+  const fillY = floor - fillH;
+
+  // Fill color
+  const fillOpacity = fillPct > 0 ? 0.55 : 0;
+  const fillCol = fillPct > 0.8 ? '#fb923c' : fillPct > 0.4 ? '#ea580c' : fillPct > 0.1 ? '#9a3412' : accentColor;
+
+  // Clip path id (unique per name to avoid conflicts)
+  const clipId = `quonset-clip-${name.replace(/\s+/g, '-')}`;
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <svg width={W} height={totalH} viewBox={`0 0 ${W} ${totalH}`} className="overflow-visible">
+        <defs>
+          {/* Clip path = the interior of the quonset shape */}
+          <clipPath id={clipId}>
+            <path d={`
+              M 4 ${floor}
+              L 4 ${archH}
+              A ${cx - 4} ${archH} 0 0 1 ${W - 4} ${archH}
+              L ${W - 4} ${floor}
+              Z
+            `} />
+          </clipPath>
+        </defs>
+
+        {/* Foundation / ground line */}
+        <rect x={2} y={floor} width={W - 4} height={3} fill="#1f2937" rx="1" />
+
+        {/* Fill level (clipped to building shape) */}
+        {fillPct > 0 && (
+          <rect
+            x={0} y={fillY} width={W} height={fillH + 3}
+            fill={fillCol} fillOpacity={fillOpacity}
+            clipPath={`url(#${clipId})`}
+            style={{ transition: 'all 0.6s ease' }}
+          />
+        )}
+
+        {/* Building body — arch outline */}
+        <path
+          d={`
+            M 4 ${floor}
+            L 4 ${archH}
+            A ${cx - 4} ${archH} 0 0 1 ${W - 4} ${archH}
+            L ${W - 4} ${floor}
+            Z
+          `}
+          fill="#111827"
+          stroke="#374151"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+
+        {/* Arch ribs (the corrugated metal lines) */}
+        {[0.2, 0.4, 0.6, 0.8].map((t, i) => {
+          // Points along the arch
+          const angle = Math.PI * t;
+          const rx = cx - 4;
+          const x = cx + rx * Math.cos(Math.PI - angle);
+          const y = archH - (archH) * Math.sin(angle);
+          return (
+            <line
+              key={i}
+              x1={x} y1={y}
+              x2={x} y2={floor}
+              stroke="#1f2937"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        {/* End wall detail — small door/vent rectangle */}
+        <rect x={cx - 7} y={floor - 10} width={14} height={10} fill="#1a2332" stroke="#374151" strokeWidth="1" rx="1" />
+        <line x1={cx} y1={floor - 10} x2={cx} y2={floor} stroke="#374151" strokeWidth="0.75" />
+
+        {/* Roof vent on top */}
+        <rect x={cx - 5} y={archH - 3} width={10} height={5} fill="#1f2937" stroke="#4b5563" strokeWidth="1" rx="1" />
+
+        {/* Fill % text */}
+        {fillPct > 0.18 && (
+          <text
+            x={cx} y={fillY + fillH / 2 + 4}
+            textAnchor="middle" fontSize="9" fontWeight="700"
+            fill="rgba(255,255,255,0.9)"
+          >
+            {Math.round(fillPct * 100)}%
+          </text>
+        )}
+
+        {/* Empty label */}
+        {isEmpty && (
+          <text x={cx} y={floor - 18} textAnchor="middle" fontSize="8" fill="#4b5563">Empty</text>
+        )}
+      </svg>
+
+      {/* Labels */}
+      <p className="text-xs font-medium text-gray-300 text-center leading-tight max-w-[96px]">{name}</p>
+      <p className="text-xs text-gray-500 text-center tabular-nums">
+        {isEmpty ? '—' : fmt(current)} <span className="text-gray-700">/ {fmt(capacity)}</span>
+      </p>
+    </div>
+  );
+}
+
+// ─── Potato Storage Locations ──────────────────────────────────────────────────
+
+interface StorageConfig {
+  name: string;
+  capacity: number;
+}
+
+interface StorageLocationConfig {
+  location: string;
+  buildings: StorageConfig[];
+}
+
+const POTATO_LOCATIONS: StorageLocationConfig[] = [
+  { location: 'Wheeler East',    buildings: [{ name: 'Wheeler East',    capacity: 150000 }] },
+  { location: 'Wheeler West',    buildings: [{ name: 'Wheeler West',    capacity: 150000 }] },
+  { location: 'Hiawatha North',  buildings: [{ name: 'Hiawatha North',  capacity: 150000 }] },
+  { location: 'Hiawatha South',  buildings: [{ name: 'Hiawatha South',  capacity: 150000 }] },
+  { location: 'Road 19 East',    buildings: [{ name: 'Road 19 East',    capacity: 150000 }] },
+  { location: 'Road 19 West',    buildings: [{ name: 'Road 19 West',    capacity: 150000 }] },
+  { location: 'Martinez North',  buildings: [{ name: 'Martinez North',  capacity: 150000 }] },
+  { location: 'Martinez South',  buildings: [{ name: 'Martinez South',  capacity: 150000 }] },
+];
+
+const ONION_LOCATIONS: StorageLocationConfig[] = [
+  { location: 'Wagner North', buildings: [{ name: 'Wagner North', capacity: 150000 }] },
+  { location: 'Wagner South', buildings: [{ name: 'Wagner South', capacity: 150000 }] },
 ];
 
 // ─── Wheat Storage Locations ────────────────────────────────────────────────────
@@ -340,6 +498,116 @@ function WheatOverviewPanel({ onSelectLocation }: { onSelectLocation: (loc: stri
   );
 }
 
+// ─── Quonset Storage Location Panel (Potatoes & Onions) ────────────────────────
+
+function QuonsetLocationPanel({
+  location,
+  accentColor,
+  unit,
+}: {
+  location: StorageLocationConfig;
+  accentColor: string;
+  unit: string;
+}) {
+  const totalCapacity = location.buildings.reduce((s, b) => s + b.capacity, 0);
+  const totalCurrent = 0; // wired to sheet later
+
+  return (
+    <div className="space-y-6">
+      <div className={`p-5 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 border border-${accentColor}-800/30 flex items-center justify-between`}>
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">{location.location} — Capacity</p>
+          <p className={`text-3xl font-bold text-${accentColor}-400 tabular-nums`}>{fmt(totalCapacity)}</p>
+          <p className="text-xs text-gray-600 mt-1">{unit} · {location.buildings.length} {location.buildings.length === 1 ? 'building' : 'buildings'}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Current</p>
+          <p className="text-2xl font-bold text-white tabular-nums">{fmt(totalCurrent)}</p>
+          <p className="text-xs text-gray-600 mt-1">{unit} stored</p>
+        </div>
+      </div>
+
+      <div className="p-6 rounded-xl bg-gray-900/60 border border-gray-800">
+        <p className="text-xs text-gray-500 uppercase tracking-widest mb-6">Quonset Storage</p>
+        <div className="flex flex-wrap gap-10 justify-start">
+          {location.buildings.map((b) => (
+            <QuonsetBuilding
+              key={b.name}
+              name={b.name}
+              capacity={b.capacity}
+              current={0}
+              accentColor={accentColor === 'orange' ? '#f97316' : '#eab308'}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuonsetOverviewPanel({
+  locations,
+  accentColor,
+  unit,
+  cropLabel,
+  onSelectLocation,
+}: {
+  locations: StorageLocationConfig[];
+  accentColor: string;
+  unit: string;
+  cropLabel: string;
+  onSelectLocation: (loc: string) => void;
+}) {
+  const totalCapacity = locations.reduce((s, loc) => s + loc.buildings.reduce((bs, b) => bs + b.capacity, 0), 0);
+
+  if (locations.length === 0) {
+    return (
+      <div className="py-16 text-center text-gray-600">
+        <p className="text-sm">No storage locations configured yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className={`p-6 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 border border-${accentColor}-800/40`}>
+        <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Total {cropLabel} Capacity</p>
+        <p className={`text-6xl font-bold text-${accentColor}-400 tabular-nums`}>{fmt(totalCapacity)}</p>
+        <p className="text-sm text-gray-600 mt-2">
+          {unit} · {locations.reduce((s, l) => s + l.buildings.length, 0)} buildings across {locations.length} locations
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {locations.map((loc) => {
+          const locCapacity = loc.buildings.reduce((s, b) => s + b.capacity, 0);
+          return (
+            <button
+              key={loc.location}
+              onClick={() => onSelectLocation(loc.location)}
+              className={`text-left p-5 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-${accentColor}-700/60 hover:bg-gray-900 transition-all group`}
+            >
+              <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors mb-3">{loc.location}</p>
+              {/* Mini quonset icons */}
+              <div className="flex gap-2 mb-3">
+                {loc.buildings.map((b) => (
+                  <svg key={b.name} width="32" height="20" viewBox="0 0 32 20">
+                    <path d="M 2 17 L 2 8 A 14 8 0 0 1 30 8 L 30 17 Z" fill="#111827" stroke="#374151" strokeWidth="1" />
+                    <rect x="2" y="17" width="28" height="2" fill="#1f2937" rx="0.5" />
+                  </svg>
+                ))}
+              </div>
+              <p className={`text-2xl font-bold text-${accentColor}-400 tabular-nums`}>{fmt(locCapacity)}</p>
+              <p className="text-xs text-gray-600 mt-1">{unit} capacity</p>
+              <p className={`text-xs text-${accentColor}-700 mt-3 group-hover:text-${accentColor}-500 transition-colors`}>View storage →</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Sheet Detail Panel ─────────────────────────────────────────────────────────
 
 function SheetDetailPanel({ sheet, unit, accentColor }: { sheet: SheetData; unit: string; accentColor: string }) {
@@ -469,8 +737,57 @@ function CropDetailView({ crop, data, loading }: { crop: CropConfig; data: CropI
     );
   }
 
-  const configured = isConfigured(data);
+  // Potatoes — quonset storage visualization
+  if (crop.id === 'potatoes') {
+    return (
+      <div className="space-y-6">
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setActiveLocation(null)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === null ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50' : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
+            Overview
+          </button>
+          {POTATO_LOCATIONS.map((loc) => (
+            <button key={loc.location} onClick={() => setActiveLocation(loc.location)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === loc.location ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50' : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
+              {loc.location}
+            </button>
+          ))}
+        </div>
+        {activeLocation === null
+          ? <QuonsetOverviewPanel locations={POTATO_LOCATIONS} accentColor="orange" unit="CWT" cropLabel="Potato" onSelectLocation={setActiveLocation} />
+          : <QuonsetLocationPanel location={POTATO_LOCATIONS.find((l) => l.location === activeLocation)!} accentColor="orange" unit="CWT" />
+        }
+      </div>
+    );
+  }
 
+  // Onions — quonset storage visualization
+  if (crop.id === 'onions') {
+    return (
+      <div className="space-y-6">
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setActiveLocation(null)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === null ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50' : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
+            Overview
+          </button>
+          {ONION_LOCATIONS.map((loc) => (
+            <button key={loc.location} onClick={() => setActiveLocation(loc.location)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === loc.location ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/50' : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
+              {loc.location}
+            </button>
+          ))}
+        </div>
+        {activeLocation === null
+          ? <QuonsetOverviewPanel locations={ONION_LOCATIONS} accentColor="yellow" unit="CWT" cropLabel="Onion" onSelectLocation={setActiveLocation} />
+          : <QuonsetLocationPanel location={ONION_LOCATIONS.find((l) => l.location === activeLocation)!} accentColor="yellow" unit="CWT" />
+        }
+      </div>
+    );
+  }
+
+
+
+  const configured = isConfigured(data);
   if (!configured) {
     return (
       <div className="py-20 text-center space-y-3">
