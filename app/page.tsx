@@ -136,7 +136,7 @@ function SheetDetailPanel({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800 bg-black/40">
-                  {['Date', 'PO #', 'In', 'Out', 'Location', 'Balance', 'Notes'].map((h) => (
+                  {['Date', 'PO #', 'In', 'Out', 'Location', 'Balance'].map((h) => (
                     <th key={h} className="px-4 py-2 text-left text-xs text-gray-600 font-medium">
                       {h}
                     </th>
@@ -168,9 +168,6 @@ function SheetDetailPanel({
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{tx.location || '—'}</td>
                     <td className="px-4 py-2.5 text-white font-medium tabular-nums">
                       {fmt(tx.runningBalance)}
-                    </td>
-                    <td className="px-4 py-2.5 text-gray-600 text-xs max-w-[160px] truncate">
-                      {tx.notes || '—'}
                     </td>
                   </tr>
                 ))}
@@ -413,7 +410,7 @@ export default function FarmInventoryPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Top header */}
-      <header className="border-b border-gray-900 px-6 lg:px-10 py-5">
+      <header className="border-b border-gray-900 px-8 lg:px-14 py-5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white">
@@ -438,7 +435,7 @@ export default function FarmInventoryPage() {
       </header>
 
       {/* Crop tabs */}
-      <nav className="border-b border-gray-900 px-6 lg:px-10">
+      <nav className="border-b border-gray-900 px-8 lg:px-14">
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           {CROPS.map((crop) => {
             const isActive = activeCropId === crop.id;
@@ -466,7 +463,7 @@ export default function FarmInventoryPage() {
       </nav>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
+      <main className="max-w-7xl mx-auto px-8 lg:px-14 py-8">
         <CropPanel
           crop={activeCrop}
           data={cropData[activeCropId] ?? null}
