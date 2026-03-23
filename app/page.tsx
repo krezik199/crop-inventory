@@ -116,7 +116,7 @@ const CROPS: CropConfig[] = [
     hasSubLocations: true,
     accentColor: 'yellow',
     bgColor: 'from-yellow-950/60 to-yellow-900/20',
-    description: 'Wagner North · Wagner South',
+    description: 'Wagner',
     icon: (size = 24, className = '') => <OnionIcon size={size} className={className} />,
   },
   {
@@ -277,19 +277,14 @@ interface StorageLocationConfig {
 }
 
 const POTATO_LOCATIONS: StorageLocationConfig[] = [
-  { location: 'Wheeler East',   buildings: [{ name: 'Wheeler East',   capacity: 6000  }] },
-  { location: 'Wheeler West',   buildings: [{ name: 'Wheeler West',   capacity: 6000  }] },
-  { location: 'Hiawatha North', buildings: [{ name: 'Hiawatha North', capacity: 4000  }] },
-  { location: 'Hiawatha South', buildings: [{ name: 'Hiawatha South', capacity: 4000  }] },
-  { location: 'Road 19 East',   buildings: [{ name: 'Road 19 East',   capacity: 10000 }] },
-  { location: 'Road 19 West',   buildings: [{ name: 'Road 19 West',   capacity: 10000 }] },
-  { location: 'Martinez North', buildings: [{ name: 'Martinez North', capacity: 6000  }] },
-  { location: 'Martinez South', buildings: [{ name: 'Martinez South', capacity: 6000  }] },
+  { location: 'Wheeler',  buildings: [{ name: 'East', capacity: 6000  }, { name: 'West',  capacity: 6000  }] },
+  { location: 'Hiawatha', buildings: [{ name: 'North', capacity: 4000 }, { name: 'South', capacity: 4000  }] },
+  { location: 'Road 19',  buildings: [{ name: 'East', capacity: 10000 }, { name: 'West',  capacity: 10000 }] },
+  { location: 'Martinez', buildings: [{ name: 'North', capacity: 6000 }, { name: 'South', capacity: 6000  }] },
 ];
 
 const ONION_LOCATIONS: StorageLocationConfig[] = [
-  { location: 'Wagner North', buildings: [{ name: 'Wagner North', capacity: 3500 }] },
-  { location: 'Wagner South', buildings: [{ name: 'Wagner South', capacity: 3500 }] },
+  { location: 'Wagner', buildings: [{ name: 'North', capacity: 3500 }, { name: 'South', capacity: 3500 }] },
 ];
 
 // ─── Wheat Storage Locations ────────────────────────────────────────────────────
