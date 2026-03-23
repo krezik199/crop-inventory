@@ -12,7 +12,7 @@ interface CropConfig {
   apiPath: string;
   unit: string;
   hasSubLocations: boolean;
-  accentColor: string;      // Tailwind color token name (used in data attr)
+  accentColor: string;
   icon: React.ReactNode;
 }
 
@@ -64,6 +64,46 @@ const CROPS: CropConfig[] = [
   },
 ];
 
+// ─── Wheat Storage Locations Config ────────────────────────────────────────────
+
+interface BinConfig {
+  name: string;
+  capacity: number;
+}
+
+interface WheatLocationConfig {
+  location: string;
+  bins: BinConfig[];
+}
+
+const WHEAT_LOCATIONS: WheatLocationConfig[] = [
+  {
+    location: 'Lincoln',
+    bins: [
+      { name: 'Bin 1', capacity: 15000 },
+      { name: 'Bin 2', capacity: 15000 },
+      { name: 'Bin 3', capacity: 15000 },
+      { name: 'Bin 4', capacity: 15000 },
+      { name: 'Bin 5', capacity: 15000 },
+      { name: 'Bin 6', capacity: 15000 },
+      { name: 'Bin 7', capacity: 15000 },
+    ],
+  },
+  {
+    location: 'Martinez',
+    bins: [
+      { name: 'North Bin', capacity: 15000 },
+      { name: 'South Bin', capacity: 15000 },
+    ],
+  },
+  {
+    location: 'Kulm',
+    bins: [
+      { name: 'Bin 1', capacity: 15000 },
+    ],
+  },
+];
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type CropDataMap = Record<string, CropInventoryResponse | null>;
@@ -79,49 +119,158 @@ function isConfigured(data: CropInventoryResponse | null) {
   return data.sheetId !== 'not-configured';
 }
 
-// ─── Components ────────────────────────────────────────────────────────────────
+// ─── Grain Bin SVG ─────────────────────────────────────────────────────────────
 
-// A single sheet/location detail panel
-function SheetDetailPanel({
-  sheet,
-  unit,
-  accentColor,
-}: {
-  sheet: SheetData;
-  unit: string;
-  accentColor: string;
-}) {
+function GrainBin({ name, capacity, current }: { name: string; capacity: number; current: number }) {
+  const fillPct = Math.min(1, Math.max(0, current / capacity));
+  const isEmpty = current === 0;
+
+  const W = 80;
+  const roofH = 22;
+  const bodyTop = roofH;
+  const bodyH = 68;
+  const bodyBottom = bodyTop + bodyH;
+  const legH = 10;
+  const H = bodyBottom + legH + 2;
+  const cx = W / 2;
+  const roofPts = `${cx},2 ${W - 4},${roofH} 4,${roofH}`;
+  const fillH = bodyH * fillPct;
+  const fillY = bodyBottom - fillH;
+  const fillColor = fillPct > 0.8 ? '#f59e0b' : fillPct > 0.4 ? '#d97706' : fillPct > 0.1 ? '#92400e' : '#1c1917';
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+        <line x1={cx - 12} y1={bodyBottom} x2={cx - 14} y2={bodyBottom + legH} stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1={cx + 12} y1={bodyBottom} x2={cx + 14} y2={bodyBottom + legH} stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" />
+        <rect x={4} y={bodyTop} width={W - 8} height={bodyH} fill="#111827" rx="3" />
+        {fillPct > 0 && (
+          <rect x={5} y={fillY} width={W - 10} height={fillH} fill={fillColor} rx="2"
+            style={{ transition: 'all 0.6s ease' }} />
+        )}
+        <rect x={4} y={bodyTop} width={W - 8} height={bodyH} fill="none" stroke="#374151" strokeWidth="1.5" rx="3" />
+        {[0.33, 0.66].map((f, i) => (
+          <line key={i} x1={5} y1={bodyTop + bodyH * f} x2={W - 5} y2={bodyTop + bodyH * f} stroke="#1f2937" strokeWidth="1" />
+        ))}
+        <polygon points={roofPts} fill="#1f2937" stroke="#374151" strokeWidth="1.5" strokeLinejoin="round" />
+        <circle cx={cx} cy={3} r={2.5} fill="#374151" />
+        {fillPct > 0.15 && (
+          <text x={cx} y={fillY + fillH / 2 + 4} textAnchor="middle" fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.85)">
+            {Math.round(fillPct * 100)}%
+          </text>
+        )}
+        {isEmpty && (
+          <text x={cx} y={bodyTop + bodyH / 2 + 4} textAnchor="middle" fontSize="9" fill="#4b5563">Empty</text>
+        )}
+      </svg>
+      <p className="text-xs font-medium text-gray-300 text-center leading-tight">{name}</p>
+      <p className="text-xs text-gray-500 text-center tabular-nums">
+        {isEmpty ? '—' : fmt(current)} <span className="text-gray-700">/ {fmt(capacity)}</span>
+      </p>
+    </div>
+  );
+}
+
+// ─── Wheat Location Panel ───────────────────────────────────────────────────────
+
+function WheatLocationPanel({ location }: { location: WheatLocationConfig }) {
+  const totalCapacity = location.bins.reduce((s, b) => s + b.capacity, 0);
+  const totalCurrent = 0; // wired to sheet later
+
+  return (
+    <div className="space-y-6">
+      <div className="p-5 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 border border-amber-800/30 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">{location.location} — Total Capacity</p>
+          <p className="text-3xl font-bold text-amber-400 tabular-nums">{fmt(totalCapacity)}</p>
+          <p className="text-xs text-gray-600 mt-1">Bu · {location.bins.length} {location.bins.length === 1 ? 'bin' : 'bins'}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Current</p>
+          <p className="text-2xl font-bold text-white tabular-nums">{fmt(totalCurrent)}</p>
+          <p className="text-xs text-gray-600 mt-1">Bu stored</p>
+        </div>
+      </div>
+
+      <div className="p-6 rounded-xl bg-gray-900/60 border border-gray-800">
+        <p className="text-xs text-gray-500 uppercase tracking-widest mb-6">Storage Bins</p>
+        <div className="flex flex-wrap gap-8 justify-start">
+          {location.bins.map((bin) => (
+            <GrainBin key={bin.name} name={bin.name} capacity={bin.capacity} current={0} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Wheat Overview Panel ───────────────────────────────────────────────────────
+
+function WheatOverviewPanel({ onSelectLocation }: { onSelectLocation: (loc: string) => void }) {
+  const totalCapacity = WHEAT_LOCATIONS.reduce((s, loc) => s + loc.bins.reduce((bs, b) => bs + b.capacity, 0), 0);
+
+  return (
+    <div className="space-y-8">
+      <div className="p-6 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 border border-amber-800/40">
+        <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Total Wheat Capacity</p>
+        <p className="text-6xl font-bold text-amber-400 tabular-nums">{fmt(totalCapacity)}</p>
+        <p className="text-sm text-gray-600 mt-2">
+          Bu · {WHEAT_LOCATIONS.reduce((s, l) => s + l.bins.length, 0)} bins across {WHEAT_LOCATIONS.length} locations
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {WHEAT_LOCATIONS.map((loc) => {
+          const locCapacity = loc.bins.reduce((s, b) => s + b.capacity, 0);
+          return (
+            <button
+              key={loc.location}
+              onClick={() => onSelectLocation(loc.location)}
+              className="text-left p-5 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-amber-700/60 hover:bg-gray-900 transition-all group"
+            >
+              <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors mb-3">{loc.location}</p>
+              <div className="flex gap-1 mb-3">
+                {loc.bins.map((bin) => (
+                  <svg key={bin.name} width="16" height="22" viewBox="0 0 16 22">
+                    <polygon points="8,1 15,6 1,6" fill="#1f2937" stroke="#374151" strokeWidth="1" />
+                    <rect x="1" y="6" width="14" height="13" fill="#111827" stroke="#374151" strokeWidth="1" rx="1" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-2xl font-bold text-amber-400 tabular-nums">{fmt(locCapacity)}</p>
+              <p className="text-xs text-gray-600 mt-1">Bu capacity · {loc.bins.length} {loc.bins.length === 1 ? 'bin' : 'bins'}</p>
+              <p className="text-xs text-amber-700 mt-3 group-hover:text-amber-500 transition-colors">View bins →</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sheet Detail Panel ─────────────────────────────────────────────────────────
+
+function SheetDetailPanel({ sheet, unit, accentColor }: { sheet: SheetData; unit: string; accentColor: string }) {
   const recent = [...sheet.transactions].slice(-8).reverse();
   const totalIn = sheet.transactions.reduce((s, t) => s + t.incoming, 0);
   const totalOut = sheet.transactions.reduce((s, t) => s + t.outgoing, 0);
 
   return (
     <div className="space-y-6">
-      {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Current Balance', value: fmt(sheet.currentTotal), sub: unit, highlight: true },
           { label: 'Total In', value: fmt(totalIn), sub: unit, highlight: false },
           { label: 'Total Out', value: fmt(totalOut), sub: unit, highlight: false },
         ].map((s) => (
-          <div
-            key={s.label}
-            className={`p-5 rounded-xl border ${
-              s.highlight
-                ? `bg-gradient-to-br from-gray-900 to-gray-800 border-${accentColor}-700/50`
-                : 'bg-gray-900/60 border-gray-800'
-            }`}
-          >
+          <div key={s.label} className={`p-5 rounded-xl border ${s.highlight ? `bg-gradient-to-br from-gray-900 to-gray-800 border-${accentColor}-700/50` : 'bg-gray-900/60 border-gray-800'}`}>
             <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">{s.label}</p>
-            <p className={`text-3xl font-bold ${s.highlight ? `text-${accentColor}-400` : 'text-white'}`}>
-              {s.value}
-            </p>
+            <p className={`text-3xl font-bold ${s.highlight ? `text-${accentColor}-400` : 'text-white'}`}>{s.value}</p>
             <p className="text-xs text-gray-600 mt-1">{s.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Transaction table */}
       <div className="rounded-xl border border-gray-800 overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-800 bg-gray-900/60">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
@@ -137,38 +286,23 @@ function SheetDetailPanel({
               <thead>
                 <tr className="border-b border-gray-800 bg-black/40">
                   {['Date', 'PO #', 'In', 'Out', 'Location', 'Balance'].map((h) => (
-                    <th key={h} className="px-4 py-2 text-left text-xs text-gray-600 font-medium">
-                      {h}
-                    </th>
+                    <th key={h} className="px-4 py-2 text-left text-xs text-gray-600 font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {recent.map((tx, i) => (
-                  <tr
-                    key={i}
-                    className="border-b border-gray-900 hover:bg-gray-900/40 transition-colors"
-                  >
+                  <tr key={i} className="border-b border-gray-900 hover:bg-gray-900/40 transition-colors">
                     <td className="px-4 py-2.5 text-gray-400 whitespace-nowrap">{tx.date}</td>
                     <td className="px-4 py-2.5 text-gray-500 font-mono text-xs">{tx.poNumber || '—'}</td>
                     <td className="px-4 py-2.5">
-                      {tx.incoming > 0 ? (
-                        <span className={`text-${accentColor}-400 font-medium`}>+{fmt(tx.incoming)}</span>
-                      ) : (
-                        <span className="text-gray-700">—</span>
-                      )}
+                      {tx.incoming > 0 ? <span className={`text-${accentColor}-400 font-medium`}>+{fmt(tx.incoming)}</span> : <span className="text-gray-700">—</span>}
                     </td>
                     <td className="px-4 py-2.5">
-                      {tx.outgoing > 0 ? (
-                        <span className="text-red-400 font-medium">−{fmt(tx.outgoing)}</span>
-                      ) : (
-                        <span className="text-gray-700">—</span>
-                      )}
+                      {tx.outgoing > 0 ? <span className="text-red-400 font-medium">−{fmt(tx.outgoing)}</span> : <span className="text-gray-700">—</span>}
                     </td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{tx.location || '—'}</td>
-                    <td className="px-4 py-2.5 text-white font-medium tabular-nums">
-                      {fmt(tx.runningBalance)}
-                    </td>
+                    <td className="px-4 py-2.5 text-white font-medium tabular-nums">{fmt(tx.runningBalance)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -180,63 +314,32 @@ function SheetDetailPanel({
   );
 }
 
-// Overview cards for a crop (shown when no sub-location is selected or for potato-seed)
-function CropOverviewPanel({
-  data,
-  crop,
-  onSelectLocation,
-}: {
-  data: CropInventoryResponse;
-  crop: CropConfig;
-  onSelectLocation?: (name: string) => void;
-}) {
+// ─── Crop Overview Panel ────────────────────────────────────────────────────────
+
+function CropOverviewPanel({ data, crop, onSelectLocation }: { data: CropInventoryResponse; crop: CropConfig; onSelectLocation?: (name: string) => void }) {
   const sheetList = Object.values(data.sheets);
   const grandTotal = sheetList.reduce((s, sh) => s + sh.currentTotal, 0);
 
   if (sheetList.length === 0) {
-    return (
-      <div className="py-16 text-center text-gray-600">
-        <p className="text-sm">No data — sheet may still be empty or credentials may be missing.</p>
-      </div>
-    );
+    return <div className="py-16 text-center text-gray-600"><p className="text-sm">No data — sheet may still be empty or credentials may be missing.</p></div>;
   }
 
   return (
     <div className="space-y-8">
-      {/* Grand total banner */}
-      <div
-        className={`p-6 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 border border-${crop.accentColor}-800/40`}
-      >
+      <div className={`p-6 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 border border-${crop.accentColor}-800/40`}>
         <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Total {crop.label}</p>
-        <p className={`text-6xl font-bold text-${crop.accentColor}-400 tabular-nums`}>
-          {fmt(grandTotal)}
-        </p>
-        <p className="text-sm text-gray-600 mt-2">
-          {crop.unit} · {sheetList.length} {sheetList.length === 1 ? 'location' : 'locations'} tracked
-        </p>
+        <p className={`text-6xl font-bold text-${crop.accentColor}-400 tabular-nums`}>{fmt(grandTotal)}</p>
+        <p className="text-sm text-gray-600 mt-2">{crop.unit} · {sheetList.length} {sheetList.length === 1 ? 'location' : 'locations'} tracked</p>
       </div>
-
-      {/* Per-sheet cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {sheetList.map((sheet) => (
-          <button
-            key={sheet.name}
-            onClick={() => onSelectLocation?.(sheet.name)}
-            className={`text-left p-5 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-${crop.accentColor}-700/60 hover:bg-gray-900 transition-all group`}
-          >
-            <p className="text-sm text-gray-400 mb-3 font-medium group-hover:text-white transition-colors">
-              {sheet.name}
-            </p>
-            <p className={`text-4xl font-bold text-${crop.accentColor}-400 tabular-nums`}>
-              {fmt(sheet.currentTotal)}
-            </p>
-            <p className="text-xs text-gray-600 mt-2">
-              {crop.unit} · {sheet.transactions.length} transactions
-            </p>
+          <button key={sheet.name} onClick={() => onSelectLocation?.(sheet.name)}
+            className={`text-left p-5 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-${crop.accentColor}-700/60 hover:bg-gray-900 transition-all group`}>
+            <p className="text-sm text-gray-400 mb-3 font-medium group-hover:text-white transition-colors">{sheet.name}</p>
+            <p className={`text-4xl font-bold text-${crop.accentColor}-400 tabular-nums`}>{fmt(sheet.currentTotal)}</p>
+            <p className="text-xs text-gray-600 mt-2">{crop.unit} · {sheet.transactions.length} transactions</p>
             {crop.hasSubLocations && (
-              <p className={`text-xs text-${crop.accentColor}-700 mt-3 group-hover:text-${crop.accentColor}-500 transition-colors`}>
-                View details →
-              </p>
+              <p className={`text-xs text-${crop.accentColor}-700 mt-3 group-hover:text-${crop.accentColor}-500 transition-colors`}>View details →</p>
             )}
           </button>
         ))}
@@ -245,19 +348,10 @@ function CropOverviewPanel({
   );
 }
 
-// Full crop panel — overview + optional sub-location tabs
-function CropPanel({
-  crop,
-  data,
-  loading,
-}: {
-  crop: CropConfig;
-  data: CropInventoryResponse | null;
-  loading: boolean;
-}) {
-  const [activeLocation, setActiveLocation] = useState<string | null>(null);
+// ─── Crop Panel ────────────────────────────────────────────────────────────────
 
-  const configured = isConfigured(data);
+function CropPanel({ crop, data, loading }: { crop: CropConfig; data: CropInventoryResponse | null; loading: boolean }) {
+  const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -267,16 +361,39 @@ function CropPanel({
     );
   }
 
+  // ── Wheat: always show bin visualization ──
+  if (crop.id === 'wheat') {
+    return (
+      <div className="space-y-6">
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setActiveLocation(null)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === null ? 'bg-amber-900/50 text-amber-300 border border-amber-700/50' : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
+            Overview
+          </button>
+          {WHEAT_LOCATIONS.map((loc) => (
+            <button key={loc.location} onClick={() => setActiveLocation(loc.location)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === loc.location ? 'bg-amber-900/50 text-amber-300 border border-amber-700/50' : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
+              {loc.location}
+            </button>
+          ))}
+        </div>
+        {activeLocation === null
+          ? <WheatOverviewPanel onSelectLocation={setActiveLocation} />
+          : <WheatLocationPanel location={WHEAT_LOCATIONS.find((l) => l.location === activeLocation)!} />
+        }
+      </div>
+    );
+  }
+
+  // ── Other crops ──
+  const configured = isConfigured(data);
+
   if (!configured) {
     return (
       <div className="py-20 text-center space-y-3">
-        <p className="text-gray-500 text-sm">
-          No Google Sheet configured for <span className="text-white font-medium">{crop.label}</span>.
-        </p>
+        <p className="text-gray-500 text-sm">No Google Sheet configured for <span className="text-white font-medium">{crop.label}</span>.</p>
         <p className="text-gray-700 text-xs font-mono">
-          Add <code className="bg-gray-900 px-2 py-0.5 rounded text-gray-400">
-            {crop.id.toUpperCase().replace(/-/g, '_')}_SHEET_ID
-          </code> to your environment variables.
+          Add <code className="bg-gray-900 px-2 py-0.5 rounded text-gray-400">{crop.id.toUpperCase().replace(/-/g, '_')}_SHEET_ID</code> to your environment variables.
         </p>
       </div>
     );
@@ -287,30 +404,19 @@ function CropPanel({
   const sheetList = Object.values(data.sheets);
   const activeSheet = activeLocation ? data.sheets[activeLocation] : null;
 
-  // For single-location crops (potato seed), skip sub-nav
+  // Potato seed (no sub-locations)
   if (!crop.hasSubLocations) {
-    if (sheetList.length === 0) {
-      return (
-        <CropOverviewPanel data={data} crop={crop} />
-      );
-    }
-    // Show all varieties as overview cards, clicking opens detail
+    if (sheetList.length === 0) return <CropOverviewPanel data={data} crop={crop} />;
     if (!activeLocation) {
-      return (
-        <CropOverviewPanel
-          data={data}
-          crop={crop}
-          onSelectLocation={sheetList.length > 1 ? setActiveLocation : undefined}
-        />
-      );
+      return <CropOverviewPanel data={data} crop={crop} onSelectLocation={sheetList.length > 1 ? setActiveLocation : undefined} />;
     }
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         <button
           onClick={() => setActiveLocation(null)}
-          className="text-base font-medium text-gray-400 hover:text-white transition flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-800 hover:border-gray-600"
+          className="flex items-center gap-3 px-6 py-4 rounded-xl border border-gray-700 text-gray-200 hover:text-white hover:border-gray-500 hover:bg-gray-900 transition-all text-xl font-semibold min-w-[200px]"
         >
-          ← All varieties
+          <span className="text-2xl">←</span> All varieties
         </button>
         <h3 className="text-xl font-bold text-white">{activeLocation}</h3>
         {activeSheet && <SheetDetailPanel sheet={activeSheet} unit={crop.unit} accentColor={crop.accentColor} />}
@@ -318,48 +424,27 @@ function CropPanel({
     );
   }
 
-  // Multi-location crops: show overview or sub-location panel
+  // Multi-location crops
   return (
     <div className="space-y-6">
-      {/* Sub-location tabs */}
       {sheetList.length > 0 && (
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setActiveLocation(null)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeLocation === null
-                ? `bg-${crop.accentColor}-900/50 text-${crop.accentColor}-300 border border-${crop.accentColor}-700/50`
-                : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'
-            }`}
-          >
+          <button onClick={() => setActiveLocation(null)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === null ? `bg-${crop.accentColor}-900/50 text-${crop.accentColor}-300 border border-${crop.accentColor}-700/50` : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
             Overview
           </button>
           {sheetList.map((sheet) => (
-            <button
-              key={sheet.name}
-              onClick={() => setActiveLocation(sheet.name)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeLocation === sheet.name
-                  ? `bg-${crop.accentColor}-900/50 text-${crop.accentColor}-300 border border-${crop.accentColor}-700/50`
-                  : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'
-              }`}
-            >
+            <button key={sheet.name} onClick={() => setActiveLocation(sheet.name)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeLocation === sheet.name ? `bg-${crop.accentColor}-900/50 text-${crop.accentColor}-300 border border-${crop.accentColor}-700/50` : 'text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'}`}>
               {sheet.name}
             </button>
           ))}
         </div>
       )}
-
-      {/* Panel body */}
-      {activeLocation === null ? (
-        <CropOverviewPanel data={data} crop={crop} onSelectLocation={setActiveLocation} />
-      ) : (
-        <div className="space-y-4">
-          {activeSheet && (
-            <SheetDetailPanel sheet={activeSheet} unit={crop.unit} accentColor={crop.accentColor} />
-          )}
-        </div>
-      )}
+      {activeLocation === null
+        ? <CropOverviewPanel data={data} crop={crop} onSelectLocation={setActiveLocation} />
+        : <div className="space-y-4">{activeSheet && <SheetDetailPanel sheet={activeSheet} unit={crop.unit} accentColor={crop.accentColor} />}</div>
+      }
     </div>
   );
 }
@@ -394,12 +479,7 @@ export default function FarmInventoryPage() {
     setIsRefreshing(false);
   }, [fetchCrop]);
 
-  // Initial load
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
-
-  // Auto-refresh every 60 seconds
+  useEffect(() => { fetchAll(); }, [fetchAll]);
   useEffect(() => {
     const interval = setInterval(fetchAll, 60_000);
     return () => clearInterval(interval);
@@ -409,32 +489,25 @@ export default function FarmInventoryPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Top header */}
       <header className="border-b border-gray-900 px-8 lg:px-14 py-5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-white flex items-baseline gap-6">
               Hyer Farms
-              <span className="ml-8 text-gray-600 font-normal text-lg">Inventory</span>
+              <span className="text-gray-600 font-normal text-lg">Inventory</span>
             </h1>
             {lastUpdated && (
-              <p className="text-xs text-gray-700 mt-0.5">
-                Last updated: <span className="text-gray-500">{lastUpdated}</span>
-              </p>
+              <p className="text-xs text-gray-700 mt-0.5">Last updated: <span className="text-gray-500">{lastUpdated}</span></p>
             )}
           </div>
-          <button
-            onClick={fetchAll}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-900 border border-gray-800 text-gray-300 rounded-lg hover:border-gray-600 hover:text-white transition disabled:opacity-40 text-sm"
-          >
+          <button onClick={fetchAll} disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-900 border border-gray-800 text-gray-300 rounded-lg hover:border-gray-600 hover:text-white transition disabled:opacity-40 text-sm">
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             {isRefreshing ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
       </header>
 
-      {/* Crop tabs */}
       <nav className="border-b border-gray-900 px-8 lg:px-14">
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           {CROPS.map((crop) => {
@@ -442,33 +515,19 @@ export default function FarmInventoryPage() {
             const data = cropData[crop.id];
             const configured = isConfigured(data);
             return (
-              <button
-                key={crop.id}
-                onClick={() => setActiveCropId(crop.id)}
-                className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
-                  isActive
-                    ? `border-${crop.accentColor}-500 text-white`
-                    : 'border-transparent text-gray-600 hover:text-gray-400 hover:border-gray-700'
-                }`}
-              >
+              <button key={crop.id} onClick={() => setActiveCropId(crop.id)}
+                className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${isActive ? `border-${crop.accentColor}-500 text-white` : 'border-transparent text-gray-600 hover:text-gray-400 hover:border-gray-700'}`}>
                 <span className={isActive ? `text-${crop.accentColor}-400` : ''}>{crop.icon}</span>
                 {crop.label}
-                {!configured && data !== undefined && (
-                  <span className="ml-1 w-1.5 h-1.5 rounded-full bg-gray-700 inline-block" />
-                )}
+                {!configured && data !== undefined && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-gray-700 inline-block" />}
               </button>
             );
           })}
         </div>
       </nav>
 
-      {/* Main content */}
       <main className="max-w-7xl mx-auto px-8 lg:px-14 py-8">
-        <CropPanel
-          crop={activeCrop}
-          data={cropData[activeCropId] ?? null}
-          loading={loadingCrops[activeCropId] ?? true}
-        />
+        <CropPanel crop={activeCrop} data={cropData[activeCropId] ?? null} loading={loadingCrops[activeCropId] ?? true} />
       </main>
 
       <footer className="text-center text-xs text-gray-800 pb-8">
