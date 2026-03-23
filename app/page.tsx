@@ -308,7 +308,7 @@ function CropPanel({
       <div className="space-y-4">
         <button
           onClick={() => setActiveLocation(null)}
-          className="text-xs text-gray-500 hover:text-white transition flex items-center gap-1"
+          className="text-base font-medium text-gray-400 hover:text-white transition flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-800 hover:border-gray-600"
         >
           ← All varieties
         </button>
@@ -415,7 +415,7 @@ export default function FarmInventoryPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white">
               Hyer Farms
-              <span className="ml-3 text-gray-600 font-normal text-lg">Inventory</span>
+              <span className="ml-8 text-gray-600 font-normal text-lg">Inventory</span>
             </h1>
             {lastUpdated && (
               <p className="text-xs text-gray-700 mt-0.5">
