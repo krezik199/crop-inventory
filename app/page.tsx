@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, Wheat, Package, Sprout, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Wheat, Sprout, ArrowLeft } from 'lucide-react';
 import { CropInventoryResponse, SheetData } from '../lib/types';
 
 // ─── Custom SVG Icons ──────────────────────────────────────────────────────────
@@ -43,7 +43,24 @@ function PeaPodIcon({ size = 24, className = '' }: { size?: number; className?: 
   );
 }
 
-// ─── Crop Config ───────────────────────────────────────────────────────────────
+function PotatoIcon({ size = 24, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      {/* Main potato body — lumpy irregular oval */}
+      <path d="M4.5 13C3.5 11 4 8.5 6 7C8 5.5 10.5 5 13 5.5C15.5 6 17.5 7 18.5 8.5C20 10.5 19.5 13.5 18 15C16.5 16.5 14 17.5 11 17.5C8 17.5 5.5 15.5 4.5 13Z"
+        stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"
+        fill="currentColor" fillOpacity="0.15"/>
+      {/* Eyes / dimples */}
+      <circle cx="9" cy="10" r="0.9" fill="currentColor" fillOpacity="0.7"/>
+      <circle cx="13.5" cy="9" r="0.9" fill="currentColor" fillOpacity="0.7"/>
+      <circle cx="15.5" cy="13" r="0.9" fill="currentColor" fillOpacity="0.7"/>
+      <circle cx="8.5" cy="14" r="0.7" fill="currentColor" fillOpacity="0.5"/>
+      {/* Small sprout nub on top */}
+      <path d="M14 5.5C14.5 4.5 15.5 4 16 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M15 4C15.5 3.5 16.5 3.5 17 4" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+    </svg>
+  );
+}
 
 interface CropConfig {
   id: string;
@@ -89,7 +106,7 @@ const CROPS: CropConfig[] = [
     accentColor: 'orange',
     bgColor: 'from-orange-950/60 to-orange-900/20',
     description: 'Multiple storage locations',
-    icon: (size = 24, className = '') => <Package width={size} height={size} className={className} />,
+    icon: (size = 24, className = '') => <PotatoIcon size={size} className={className} />,
   },
   {
     id: 'onions',
