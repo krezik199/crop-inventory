@@ -1,17 +1,13 @@
-const CACHE_NAME = 'potato-inventory-v1';
+const CACHE_NAME = 'crop-inventory-v2';
 const urlsToCache = [
-  '/',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
   '/manifest.json',
 ];
 
-// Install event - cache assets
+// Install — cache minimal assets, skip waiting so new SW activates immediately
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(urlsToCache).catch(() => {
-        // If caching fails, just continue (likely files don't exist yet)
         console.log('Some cache files could not be added');
       });
     })
@@ -19,13 +15,14 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate — delete ALL old caches immediately
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -35,34 +32,35 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch — NETWORK FIRST for everything except icons/manifest
+// This ensures iOS always gets the latest app code
 self.addEventListener('fetch', event => {
-  // Skip API calls for now (let them always go to network)
-  if (event.request.url.includes('/api/')) {
+  const url = new URL(event.request.url);
+
+  // Always go to network for API calls and page content
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('.tsx') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.startsWith('/_next/')
+  ) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
     return;
   }
 
+  // Cache-first only for static assets (icons, manifest)
   event.respondWith(
-    caches.match(event.request).then(response => {
-      if (response) {
-        return response;
-      }
-
-      return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type === 'error') {
-          return response;
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
-
-        // Clone the response
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
-        });
-
         return response;
-      }).catch(() => {
-        // If fetch fails and there's no cache, return offline page
-        return caches.match(event.request);
       });
     })
   );
