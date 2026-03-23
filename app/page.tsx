@@ -106,6 +106,7 @@ const CROPS: CropConfig[] = [
     accentColor: 'orange',
     bgColor: 'from-orange-950/60 to-orange-900/20',
     description: 'Wheeler · Hiawatha · Road 19 · Martinez',
+    icon: (size = 24, className = '') => <PotatoIcon size={size} className={className} />,
   },
   {
     id: 'onions',
@@ -116,6 +117,7 @@ const CROPS: CropConfig[] = [
     accentColor: 'yellow',
     bgColor: 'from-yellow-950/60 to-yellow-900/20',
     description: 'Wagner North · Wagner South',
+    icon: (size = 24, className = '') => <OnionIcon size={size} className={className} />,
   },
   {
     id: 'yellow-peas',
