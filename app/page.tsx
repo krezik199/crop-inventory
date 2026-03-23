@@ -322,7 +322,7 @@ type CropDataMap = Record<string, CropInventoryResponse | null>;
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
 function isConfigured(data: CropInventoryResponse | null) {
