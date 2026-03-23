@@ -101,7 +101,7 @@ const CROPS: CropConfig[] = [
     id: 'potatoes',
     label: 'Potatoes',
     apiPath: '/api/inventory/potatoes',
-    unit: 'CWT',
+    unit: 'Tons',
     hasSubLocations: true,
     accentColor: 'orange',
     bgColor: 'from-orange-950/60 to-orange-900/20',
@@ -112,7 +112,7 @@ const CROPS: CropConfig[] = [
     id: 'onions',
     label: 'Onions',
     apiPath: '/api/inventory/onions',
-    unit: 'CWT',
+    unit: 'Tons',
     hasSubLocations: true,
     accentColor: 'yellow',
     bgColor: 'from-yellow-950/60 to-yellow-900/20',
@@ -277,19 +277,19 @@ interface StorageLocationConfig {
 }
 
 const POTATO_LOCATIONS: StorageLocationConfig[] = [
-  { location: 'Wheeler East',    buildings: [{ name: 'Wheeler East',    capacity: 150000 }] },
-  { location: 'Wheeler West',    buildings: [{ name: 'Wheeler West',    capacity: 150000 }] },
-  { location: 'Hiawatha North',  buildings: [{ name: 'Hiawatha North',  capacity: 150000 }] },
-  { location: 'Hiawatha South',  buildings: [{ name: 'Hiawatha South',  capacity: 150000 }] },
-  { location: 'Road 19 East',    buildings: [{ name: 'Road 19 East',    capacity: 150000 }] },
-  { location: 'Road 19 West',    buildings: [{ name: 'Road 19 West',    capacity: 150000 }] },
-  { location: 'Martinez North',  buildings: [{ name: 'Martinez North',  capacity: 150000 }] },
-  { location: 'Martinez South',  buildings: [{ name: 'Martinez South',  capacity: 150000 }] },
+  { location: 'Wheeler East',   buildings: [{ name: 'Wheeler East',   capacity: 6000  }] },
+  { location: 'Wheeler West',   buildings: [{ name: 'Wheeler West',   capacity: 6000  }] },
+  { location: 'Hiawatha North', buildings: [{ name: 'Hiawatha North', capacity: 4000  }] },
+  { location: 'Hiawatha South', buildings: [{ name: 'Hiawatha South', capacity: 4000  }] },
+  { location: 'Road 19 East',   buildings: [{ name: 'Road 19 East',   capacity: 10000 }] },
+  { location: 'Road 19 West',   buildings: [{ name: 'Road 19 West',   capacity: 10000 }] },
+  { location: 'Martinez North', buildings: [{ name: 'Martinez North', capacity: 6000  }] },
+  { location: 'Martinez South', buildings: [{ name: 'Martinez South', capacity: 6000  }] },
 ];
 
 const ONION_LOCATIONS: StorageLocationConfig[] = [
-  { location: 'Wagner North', buildings: [{ name: 'Wagner North', capacity: 150000 }] },
-  { location: 'Wagner South', buildings: [{ name: 'Wagner South', capacity: 150000 }] },
+  { location: 'Wagner North', buildings: [{ name: 'Wagner North', capacity: 3500 }] },
+  { location: 'Wagner South', buildings: [{ name: 'Wagner South', capacity: 3500 }] },
 ];
 
 // ─── Wheat Storage Locations ────────────────────────────────────────────────────
