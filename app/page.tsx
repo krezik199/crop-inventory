@@ -525,7 +525,7 @@ function QuonsetLocationPanel({
       </div>
 
       <div className="p-6 rounded-xl bg-gray-900/60 border border-gray-800">
-        <p className="text-xs text-gray-500 uppercase tracking-widest mb-6">Quonset Storage</p>
+        <p className="text-xs text-gray-500 uppercase tracking-widest mb-6">Storages</p>
         <div className="flex flex-wrap gap-10 justify-start">
           {location.buildings.map((b) => (
             <QuonsetBuilding
